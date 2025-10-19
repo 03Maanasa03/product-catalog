@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Catalog with Cart</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #333;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .controls input, .controls select {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-card img {
+      max-width: 100%;
+      height: 150px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+
+    .product-card h3 {
+      margin: 10px 0 5px 0;
+      font-size: 18px;
+    }
+
+    .product-card p {
+      margin: 5px 0;
+      color: #555;
+    }
+
+    .product-card button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .product-card button:hover {
+      background: #218838;
+    }
+
+    #cart {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      max-width: 250px;
+    }
+
+    #cart h3 {
+      margin-top: 0;
+    }
+
+    #cart ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #cart ul li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Product Catalog</h1>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search by name..." />
+    <select id="category">
+      <option value="all">All Categories</option>
+    </select>
+  </div>
+
+  <div id="product-container" class="product-grid"></div>
+
+  <div id="cart">
+    <h3>Cart (<span id="cart-count">0</span>)</h3>
+    <ul id="cart-items"></ul>
+    <p>Total: $<span id="cart-total">0</span></p>
+  </div>
+
+  <script>
+    let products = [];
+    let cart = [];
+
+    // Sample 50 products
+    products = [
+      {"id":1,"name":"Apple MacBook Air M2","category":"laptops","price":1199,"image":"https://www.apple.com/v/macbook-air-m2/images/overview/hero_macbook_air_m2__f4g0j9f5zv6u_large.jpg"},
+      {"id":2,"name":"Dell XPS 13","category":"laptops","price":1119,"image":"https://i.dell.com/sites/imagecontent/products/PublishingImages/xps-13-9315-laptop/spi/ng/xps-13-9315-laptop-ng-pdp-gallery-504x350.jpg"},
+      {"id":3,"name":"HP Pavilion 15","category":"laptops","price":900,"image":"https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c07784855.png"},
+      {"id":4,"name":"Lenovo ThinkPad X1","category":"laptops","price":1250,"image":"https://www.lenovo.com/medias/lenovo-laptop-thinkpad-x1-carbon-hero.png"},
+      {"id":5,"name":"Asus ZenBook 14","category":"laptops","price":1050,"image":"https://dlcdnwebimgs.asus.com/gain/zenbook-14.png"},
+      {"id":6,"name":"iPhone 14","category":"phones","price":799,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone14-select-202209-6-1inch-purple_AV1"},
+      {"id":7,"name":"Samsung Galaxy S23","category":"phones","price":899,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/sm-s911bzkeinu/gallery/in-galaxy-s23-s911-sm-s911bzkeinu-534302368?$1300_1038_PNG$"},
+      {"id":8,"name":"OnePlus 11","category":"phones","price":799,"image":"https://image01.oneplus.net/ebp/202302/28/1-m00-4c-cf-rb8bsmqcmfwaf5jlaaahjm6s1m4465_840_840.png"},
+      {"id":9,"name":"Google Pixel 7","category":"phones","price":699,"image":"https://store.google.com/product_images/pixel_7.png"},
+      {"id":10,"name":"Xiaomi 13","category":"phones","price":599,"image":"https://i01.appmifile.com/webfile/globalimg/products/pc/mi13/mi13.png"},
+      {"id":11,"name":"Logitech MX Master 3","category":"accessories","price":99,"image":"https://resource.logitech.com/content/dam/logitech/en/products/mice/mx-master-3/gallery/mx-master-3-top-view.png"},
+      {"id":12,"name":"Razer DeathAdder V2","category":"accessories","price":69.99,"image":"https://assets2.razerzone.com/images/pnx.assets/9a1cdb71a4109e6b5b7b6b2c6f6d49d8/deathadder-v2-gallery-1500x1000-1.jpg"},
+      {"id":13,"name":"Anker USB-C Hub","category":"accessories","price":35,"image":"https://cdn.shopify.com/s/files/1/0066/7569/4864/products/a8362_powerexpand-6-in-1-usb-c-pd-ethernet-hub_1_1000x.png"},
+      {"id":14,"name":"Apple AirPods Pro","category":"accessories","price":249,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/airpods-pro-2nd-generation.png"},
+      {"id":15,"name":"Samsung Galaxy Buds 2","category":"accessories","price":149,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/galaxy-buds2.png"},
+      {"id":16,"name":"iPad Air","category":"tablets","price":599,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-air-5th-gen.png"},
+      {"id":17,"name":"Samsung Galaxy Tab S8","category":"tablets","price":699,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/galaxy-tab-s8.png"},
+      {"id":18,"name":"Lenovo Tab P11","category":"tablets","price":299,"image":"https://www.lenovo.com/medias/lenovo-tab-p11-hero.png"},
+      {"id":19,"name":"Amazon Fire HD 10","category":"tablets","price":149,"image":"https://m.media-amazon.com/images/I/51nViHtL+1L._AC_SL1000_.jpg"},
+      {"id":20,"name":"Microsoft Surface Pro 9","category":"tablets","price":999,"image":"https://c.s-microsoft.com/en-us/CMSImages/surface-pro-9.png"},
+      {"id":21,"name":"Dell Inspiron 16","category":"laptops","price":1100,"image":"https://i.dell.com/medias/inspiron-16.png"},
+      {"id":22,"name":"HP Spectre x360","category":"laptops","price":1350,"image":"https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c06533450.png"},
+      {"id":23,"name":"Asus ROG Zephyrus G14","category":"laptops","price":1450,"image":"https://dlcdnwebimgs.asus.com/gain/rog-zephyrus.png"},
+      {"id":24,"name":"iPhone 14 Pro","category":"phones","price":999,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone14-pro.png"},
+      {"id":25,"name":"Samsung Galaxy Z Flip 5","category":"phones","price":1099,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/sm-f721bzkeinu.png"},
+      {"id":26,"name":"OnePlus Nord 3","category":"phones","price":499,"image":"https://image01.oneplus.net/ebp/202305/28/nord3.png"},
+      {"id":27,"name":"Google Pixel 7a","category":"phones","price":449,"image":"https://store.google.com/product_images/pixel_7a.png"},
+      {"id":28,"name":"Logitech K380 Keyboard","category":"accessories","price":29,"image":"https://resource.logitech.com/k380-keyboard.png"},
+      {"id":29,"name":"Razer BlackWidow V3","category":"accessories","price":129,"image":"https://assets2.razerzone.com/images/blackwidow-v3.png"},
+      {"id":30,"name":"Anker PowerCore 20000","category":"accessories","price":49,"image":"https://cdn.shopify.com/s/files/1/0066/7569/4864/products/anker-powercore-20000.png"},
+      {"id":31,"name":"Apple Pencil 2","category":"accessories","price":129,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/apple-pencil-2.png"},
+      {"id":32,"name":"iPad Mini 6","category":"tablets","price":499,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-mini-6.png"},
+      {"id":33,"name":"Samsung Galaxy Tab A8","category":"tablets","price":229,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/galaxy-tab-a8.png"},
+      {"id":34,"name":"Lenovo Yoga Tab 13","category":"tablets","price":599,"image":"https://www.lenovo.com/medias/yoga-tab-13.png"},
+      {"id":35,"name":"Microsoft Surface Go 3","category":"tablets","price":399,"image":"https://c.s-microsoft.com/en-us/CMSImages/surface-go-3.png"},
+      {"id":36,"name":"Dell XPS 15","category":"laptops","price":1599,"image":"https://i.dell.com/medias/xps-15.png"},
+      {"id":37,"name":"HP Envy 13","category":"laptops","price":1099,"image":"https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c07123450.png"},
+      {"id":38,"name":"Asus VivoBook S14","category":"laptops","price":850,"image":"https://dlcdnwebimgs.asus.com/gain/vivobook-s14.png"},
+      {"id":39,"name":"iPhone 13","category":"phones","price":699,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone13.png"},
+      {"id":40,"name":"Samsung Galaxy A54","category":"phones","price":399,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/galaxy-a54.png"},
+      {"id":41,"name":"OnePlus 10 Pro","category":"phones","price":799,"image":"https://image01.oneplus.net/ebp/202303/28/oneplus-10-pro.png"},
+      {"id":42,"name":"Logitech G502 Mouse","category":"accessories","price":59,"image":"https://resource.logitech.com/g502-mouse.png"},
+      {"id":43,"name":"Razer Naga X","category":"accessories","price":79,"image":"https://assets2.razerzone.com/images/naga-x.png"},
+      {"id":44,"name":"Anker Wireless Charger","category":"accessories","price":39,"image":"https://cdn.shopify.com/s/files/1/0066/7569/4864/products/anker-wireless-charger.png"},
+      {"id":45,"name":"Apple Magic Keyboard","category":"accessories","price":99,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/magic-keyboard.png"},
+      {"id":46,"name":"iPad Pro 12.9","category":"tablets","price":1099,"image":"https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-pro-12-9.png"},
+      {"id":47,"name":"Samsung Galaxy Tab S9","category":"tablets","price":799,"image":"https://images.samsung.com/is/image/samsung/p6pim/in/galaxy-tab-s9.png"},
+      {"id":48,"name":"Lenovo Tab M10","category":"tablets","price":199,"image":"https://www.lenovo.com/medias/tab-m10.png"},
+      {"id":49,"name":"Amazon Fire 7","category":"tablets","price":79,"image":"https://m.media-amazon.com/images/I/41zg9Z9FZ0L._AC_SL1000_.jpg"},
+      {"id":50,"name":"Microsoft Surface Duo 2","category":"tablets","price":1499,"image":"https://c.s-microsoft.com/en-us/CMSImages/surface-duo-2.png"}
+    ];
+
+    // Display products
+    function displayProducts(list) {
+      const container = document.getElementById('product-container');
+      container.innerHTML = '';
+
+      if(list.length === 0) {
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No products found.</p>';
+        return;
+      }
+
+      list.forEach(product => {
+        const div = document.createElement('div');
+        div.className = 'product-card';
+        div.innerHTML = `
+          <img src="${product.image}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p>Category: ${product.category}</p>
+          <p>Price: $${product.price}</p>
+          <button onclick="addToCart(${product.id})">Add to Cart</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Populate category filter
+    function populateCategoryFilter() {
+      const select = document.getElementById('category');
+      const categories = [...new Set(products.map(p => p.category))];
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+        select.appendChild(option);
+      });
+    }
+
+    // Search and filter
+    document.getElementById('search').addEventListener('input', filterProducts);
+    document.getElementById('category').addEventListener('change', filterProducts);
+
+    function filterProducts() {
+      const searchText = document.getElementById('search').value.toLowerCase();
+      const selectedCategory = document.getElementById('category').value;
+
+      const filtered = products.filter(p => {
+        const matchesName = p.name.toLowerCase().includes(searchText);
+        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+        return matchesName && matchesCategory;
+      });
+
+      displayProducts(filtered);
+    }
+
+    // Add to cart
+    function addToCart(id) {
+      const product = products.find(p => p.id === id);
+      cart.push(product);
+      updateCart();
+    }
+
+    function updateCart() {
+      const cartItems = document.getElementById('cart-items');
+      const cartCount = document.getElementById('cart-count');
+      const cartTotal = document.getElementById('cart-total');
+
+      cartItems.innerHTML = '';
+      let total = 0;
+
+      cart.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} - $${item.price}`;
+        cartItems.appendChild(li);
+        total += item.price;
+      });
+
+      cartCount.textContent = cart.length;
+      cartTotal.textContent = total.toFixed(2);
+    }
+
+    // Initialize
+    populateCategoryFilter();
+    displayProducts(products);
+  </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Catalog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- your HTML layout here (search bar, product cards, etc.) -->
+
+  <script>
+    let products = [];
+    let cart = [];
+
+    async function loadProducts() {
+      try {
+        const response = await fetch("http://localhost:5000/api/products");
+        products = await response.json();
+        populateCategoryFilter();
+        displayProducts(products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    }
+
+    // your existing functions go below this
+    function displayProducts(list) { /* existing display logic */ }
+    function populateCategoryFilter() { /* existing filter logic */ }
+    function filterProducts() { /* existing filter logic */ }
+    function addToCart(id) { /* existing cart logic */ }
+    function updateCart() { /* existing cart logic */ }
+
+    // Load products on page start
+    loadProducts();
+  </script>
+</body>
+</html>
+
+
